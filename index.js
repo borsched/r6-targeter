@@ -24,12 +24,12 @@ Client.on('message', msg => { // must use in a server for the @mention command f
 				}
 				let level = stats[0].children[0].data.trim();
 				let best = stats[1].children[0].data.trim().replace(',', '');
-				let current = stats[2].children[0].data.trim();
+				let current = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__aside div.trn-card div.trn-card__content.trn-card--light.pt8.pb8 div div div')[2].children[0].data.split(" ")[0].replace(',', '');
 				output += "Level: " + level + "\n";
-				output += "Current Rank: " + current + "\n";
+				output += `Current Rank: ${current} (${getRank(parseInt(current))})\n`;
 				output += `Best MMR Rating: ${best} (${getRank(parseInt(best))})\n\n`;
 
-				let season = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__content div.trn-card div.r6-season-list div.r6-season div.r6-season__stats div.trn-defstats.trn-defstats--width4 div.trn-defstat div.trn-defstat__value')[0].children[0].data;
+				let season = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__aside div.trn-card div.trn-card__content.pt8.pb8 div span')[2].prev.data.trim();
 				output += `Season KD: ${season}\n`;
 				let kd = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__content div.trn-scont__content.trn-card.trn-card--dark-header div.trn-card__content.pb16 div.trn-defstats.trn-defstats--width4 div.trn-defstat.trn-defstat--large div.trn-defstat__value')[3].children[0].data.trim();
 				output += `Overall KD: ${kd}\n\n`;
