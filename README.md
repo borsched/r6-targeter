@@ -1,5 +1,5 @@
-# R6 Targeter
-Discord bot that displays lifetime operator stats from a provided R6 name.
-Replace TOKEN on line 5 with your bot token.
+# r6-targeter
+Program that displays lifetime operator stats from a provided R6 name.
 # Usage
-	@{bot name} {user}
+Download the correct executable for your operating system and run it.
+This was built using [pkg](https://www.npmjs.com/package/pkg).

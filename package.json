@@ -1,16 +1,16 @@
 {
-  "name": "r6targeter",
+  "name": "r6-targeter",
   "version": "1.0.0",
-  "description": "",
+  "description": "R6 stats displayer for target banning",
   "main": "index.js",
+  "bin":"bin.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "MIT",
+  "author": "borsched",
+  "license": "GPL",
   "dependencies": {
     "cheerio": "^1.0.0-rc.10",
-    "discord.js": "^12.5.3",
     "unirest": "^0.6.0"
   }
 }

@@ -1,74 +1,63 @@
 const unirest = require('unirest');
 const cheerio = require('cheerio');
-const Discord = require('discord.js');
-const Client = new Discord.Client();
-Client.login(""); // @TODO
-Client.on('ready', () => {
-	console.log('ready');
-});
 
-Client.on('message', msg => { // must use in a server for the @mention command formatting to work properly
-	if (msg.author.id == Client.user.id || !msg.guild) return;
-	let user = msg.mentions.members.first();
-	if (!user) return;
-	if (user.user.id == Client.user.id) {
-		let name = msg.content.split(" ")[1];
-		(async() => {
-			let output = "```\n" + name + "\n\n";
-			let isPC =
-			await unirest.get(`https://r6.tracker.network/profile/pc/${name}`).then(function(result) {
-				let $ = cheerio.load(result.body);
-				let stats = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__content div.trn-scont__content.trn-card.trn-card--dark-header div.trn-card__content.trn-card--light.trn-defstats-grid div.trn-defstat.mb0 div.trn-defstat__value')
-				if (stats.length == 0) {
-					return false; // not on PC
-				}
-				let level = stats[0].children[0].data.trim();
-				let best = stats[1].children[0].data.trim().replace(',', '');
-				let current = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__aside div.trn-card div.trn-card__content.trn-card--light.pt8.pb8 div div div')[2]
-				output += "Level: " + level + "\n";
-				if (current) { // if has played ranked before?
-					current = current.children[0].data.split(" ")[0].replace(',', '');
-					output += `Current Rank: ${current} (${getRank(parseInt(current))})\n`;
+module.exports = function(name) {
+	(async() => {
+		let output = "\n";
+		let isPC =
+		await unirest.get(`https://r6.tracker.network/profile/pc/${name}`).then(function(result) {
+			let $ = cheerio.load(result.body);
+			let stats = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__content div.trn-scont__content.trn-card.trn-card--dark-header div.trn-card__content.trn-card--light.trn-defstats-grid div.trn-defstat.mb0 div.trn-defstat__value')
+			if (stats.length == 0) {
+				return false; // not on PC
+			}
+			let level = stats[0].children[0].data.trim();
+			let best = stats[1].children[0].data.trim().replace(',', '');
+			let current = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__aside div.trn-card div.trn-card__content.trn-card--light.pt8.pb8 div div div')[2]
+			output += "Level: " + level + "\n";
+			if (current) { // if has played ranked before?
+				current = current.children[0].data.split(" ")[0].replace(',', '');
+				output += `Current Rank: ${current} (${getRank(parseInt(current))})\n`;
+				if (best.length > 0) {
 					output += `Best MMR Rating: ${best} (${getRank(parseInt(best))})\n\n`;
 				}
-
-				let season = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__aside div.trn-card div.trn-card__content.pt8.pb8 div span')[2].prev.data.trim();
-				output += `Season KD: ${season}\n`;
-				let kd = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__content div.trn-scont__content.trn-card.trn-card--dark-header div.trn-card__content.pb16 div.trn-defstats.trn-defstats--width4 div.trn-defstat.trn-defstat--large div.trn-defstat__value')[3].children[0].data.trim();
-				output += `Overall KD: ${kd}\n\n`;
-				return true;
-			});
-			if (!isPC) {
-				return msg.reply(`${name} is not on PC.`);
 			}
 
-			let attackers = [];
-			let defenders = [];
-			await unirest.get(`https://r6.tracker.network/profile/pc/${name}/operators`).then(function(result) {
-				let $ = cheerio.load(result.body);
-				$('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont div.trn-scont__content div.trn-card.trn-card--ftr-purple div.trn-table-container table#operators-Attackers.trn-table tbody').children().each(function(i, e) {
-					attackers.push(getStats($(e)));
-				})
-				$('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont div.trn-scont__content div.trn-card.trn-card--ftr-blue div.trn-table-container table#operators-Defenders.trn-table tbody').children().each(function(i, e) {
-					defenders.push(getStats($(e)));
-				})
-			});
-			attackers.sort(playtimeSort);
-			defenders.sort(playtimeSort);
-			let topAttackers = []; // make a 2d array and format it
-			for (var i = 0; i < 5; i++) {
-				topAttackers.push(attackers[i]);
-			}
-			let topDefenders = [];
-			for (var i = 0; i < 5; i++) {
-				topDefenders.push(defenders[i]);
-			}
-			output += format(topAttackers) + "\n" + format(topDefenders);
-			output += "```";
-			msg.channel.send(output);
-		})();
-	}
-});
+			let season = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__aside div.trn-card div.trn-card__content.pt8.pb8 div span')[2].prev.data.trim();
+			output += `Season KD: ${season}\n`;
+			let kd = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__content div.trn-scont__content.trn-card.trn-card--dark-header div.trn-card__content.pb16 div.trn-defstats.trn-defstats--width4 div.trn-defstat.trn-defstat--large div.trn-defstat__value')[3].children[0].data.trim();
+			output += `Overall KD: ${kd}\n\n`;
+			return true;
+		});
+		if (!isPC) {
+			return console.log(`${name} is not on PC.`);
+		}
+
+		let attackers = [];
+		let defenders = [];
+		await unirest.get(`https://r6.tracker.network/profile/pc/${name}/operators`).then(function(result) {
+			let $ = cheerio.load(result.body);
+			$('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont div.trn-scont__content div.trn-card.trn-card--ftr-purple div.trn-table-container table#operators-Attackers.trn-table tbody').children().each(function(i, e) {
+				attackers.push(getStats($(e)));
+			})
+			$('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont div.trn-scont__content div.trn-card.trn-card--ftr-blue div.trn-table-container table#operators-Defenders.trn-table tbody').children().each(function(i, e) {
+				defenders.push(getStats($(e)));
+			})
+		});
+		attackers.sort(playtimeSort);
+		defenders.sort(playtimeSort);
+		let topAttackers = []; // make a 2d array and format it
+		for (var i = 0; i < 5; i++) {
+			topAttackers.push(attackers[i]);
+		}
+		let topDefenders = [];
+		for (var i = 0; i < 5; i++) {
+			topDefenders.push(defenders[i]);
+		}
+		output += format(topAttackers) + "\n" + format(topDefenders);
+		console.log(output);
+	})();
+}
 
 function getStats(operator) {
 	let stats = operator.children();
@@ -134,3 +123,4 @@ function getRank(MMR) {
 	}
 	return rank;
 }
+
