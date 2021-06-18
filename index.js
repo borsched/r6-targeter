@@ -12,8 +12,31 @@ Client.on('message', msg => { // must use in a server for the @mention command f
 	let user = msg.mentions.members.first();
 	if (!user) return;
 	if (user.user.id == Client.user.id) {
-		let name = msg.content.toLowerCase().split(" ")[1];
+		let name = msg.content.split(" ")[1];
 		(async() => {
+			let output = "```\n" + name + "\n\n";
+			let isPC =
+			await unirest.get(`https://r6.tracker.network/profile/pc/${name}`).then(function(result) {
+				let $ = cheerio.load(result.body);
+				let stats = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__content div.trn-scont__content.trn-card.trn-card--dark-header div.trn-card__content.trn-card--light.trn-defstats-grid div.trn-defstat.mb0 div.trn-defstat__value')
+				if (stats.length == 0) {
+					return false; // not on PC
+				}
+				let level = stats[0].children[0].data.trim();
+				let best = stats[1].children[0].data.trim().replace(',', '');
+				let current = stats[2].children[0].data.trim();
+				output += "Level: " + level + "\n";
+				output += "Current Rank: " + current + "\n";
+				output += `Best MMR Rating: ${best} (${getRank(parseInt(best))})\n\n`;
+
+				let kd = $('html body.trn-site.trn-site--small-header div.trn-site__container div#profile.trn-profile div.trn-scont.trn-scont--swap div.trn-scont__content div.trn-scont__content.trn-card.trn-card--dark-header div.trn-card__content.pb16 div.trn-defstats.trn-defstats--width4 div.trn-defstat.trn-defstat--large div.trn-defstat__value')[3].children[0].data.trim();
+				output += `Overall KD: ${kd}\n\n`;
+				return true;
+			});
+			if (!isPC) {
+				return msg.reply(`${name} is not on PC.`);
+			}
+
 			let attackers = [];
 			let defenders = [];
 			await unirest.get(`https://r6.tracker.network/profile/pc/${name}/operators`).then(function(result) {
@@ -35,7 +58,8 @@ Client.on('message', msg => { // must use in a server for the @mention command f
 			for (var i = 0; i < 5; i++) {
 				topDefenders.push(defenders[i]);
 			}
-			let output = "```\n" + format(topAttackers) + "\n" + format(topDefenders) + "```";
+			output += format(topAttackers) + "\n" + format(topDefenders);
+			output += "```";
 			msg.channel.send(output);
 		})();
 	}
@@ -89,4 +113,19 @@ function format(matrix) { // formats a matrix to have columns aligned
 		output += line + "\n";
 	}
 	return output;
+}
+
+function getRank(MMR) {
+	let requirements = [1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2800, 3000, 3200, 3600, 4000, 4400, 5000];
+	let ranks = ["Copper IV", "Copper III", "Copper II", "Copper I", "Bronze V", "Bronze IV", "Bronze III", "Bronze II", "Bronze I", "Silver V", "Silver IV", "Silver III", "Silver II", "Silver I", "Gold III", "Gold II", "Gold I", "Platinum III", "Platinum II", "Platinum I", "Diamond", "Champion"]
+	let rank = "Copper V";
+	for (var i = 0; i < requirements.length; i++) {
+		if (MMR >= requirements[i]) {
+			rank = ranks[i];
+		}
+		else {
+			break;
+		}
+	}
+	return rank;
 }
